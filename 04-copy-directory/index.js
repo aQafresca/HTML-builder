@@ -4,29 +4,40 @@ const folderPath = path.join(__dirname, 'files');
 const copyFolderPath = path.join(__dirname, 'files-copy');
 
 const copyDir = (folder, copyFolder) => {
-  fs.mkdir(copyFolder, { recursive: true }, (err) => {
+  fs.rm(copyFolder, { recursive: true, force: true }, (err) => {
     if (err) {
-      console.log('Error create folder:', err);
+      console.log('Error removing folder:', err);
       return;
     }
 
-    fs.readdir(folder, { withFileTypes: true }, (err, files) => {
+    fs.mkdir(copyFolder, { recursive: true }, (err) => {
       if (err) {
-        console.log('Error read folder', err);
+        console.log('Error creating folder:', err);
         return;
       }
 
-      files.forEach((file) => {
-        const mainFolderPath = path.join(folder, file.name);
-        const copyFolderPath = path.join(copyFolder, file.name);
+      fs.readdir(folder, { withFileTypes: true }, (err, files) => {
+        if (err) {
+          console.log('Error reading folder:', err);
+          return;
+        }
 
-        fs.copyFile(mainFolderPath, copyFolderPath, (err) => {
-          if (err) {
-            console.log('Error copy file');
+        files.forEach((file) => {
+          const mainFilePath = path.join(folder, file.name);
+          const copyFilePath = path.join(copyFolder, file.name);
+
+          if (file.isDirectory()) {
+            copyDir(mainFilePath, copyFilePath);
           } else {
-            console.log(
-              `file copied from ${mainFolderPath} to ${copyFolderPath}`,
-            );
+            fs.copyFile(mainFilePath, copyFilePath, (err) => {
+              if (err) {
+                console.log(`Error copy file:`, err);
+              } else {
+                console.log(
+                  `File copied from ${mainFilePath} to ${copyFilePath}`,
+                );
+              }
+            });
           }
         });
       });
